@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <experimental/filesystem>
@@ -9,6 +10,9 @@
 #include "chip8.h"
 
 namespace fs = std::experimental::filesystem;
+
+static const int WINDOW_WIDTH = 1280;
+static const int WINDOW_HEIGHT = 720;
 
 static bool loadROM(chip8::Chip8Context* context, const char* path)
 {
@@ -27,6 +31,38 @@ static bool loadROM(chip8::Chip8Context* context, const char* path)
     context->loadROM(buffer);
 
     return true;
+}
+
+static void copyFramebuffer(chip8::Chip8Context* context, SDL_Texture* texture)
+{
+    const auto& framebuffer = context->getFramebuffer();
+    std::vector<std::uint32_t> pixels(framebuffer.size());
+
+    std::transform(framebuffer.cbegin(), framebuffer.cend(), pixels.begin(),
+                   [](auto pixel) { return pixel ? 0xFFFFFFFF : 0; });
+
+    SDL_UpdateTexture(texture, NULL, pixels.data(), chip8::FRAMEBUFFER_WIDTH * sizeof(std::uint32_t));
+}
+
+static SDL_Rect computeDrawRect(int width, int height)
+{
+    SDL_Rect result;
+
+    auto aspect = static_cast<float>(chip8::FRAMEBUFFER_WIDTH) / static_cast<float>(chip8::FRAMEBUFFER_HEIGHT);
+    auto aw = static_cast<float>(height) * aspect;
+    auto ah = static_cast<float>(height);
+
+    if (aw > width) {
+        aw = static_cast<float>(width);
+        ah = aw / aspect;
+    }
+
+    result.x = width / 2 - aw / 2;
+    result.y = height / 2 - ah / 2;
+    result.w = aw;
+    result.h = ah;
+
+    return result;
 }
 
 int main(int argc, char* argv[])
@@ -48,7 +84,8 @@ int main(int argc, char* argv[])
     }
 
     auto window = std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)>(
-        SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_SHOWN),
+        SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                         WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN),
         SDL_DestroyWindow);
 
     auto renderer = std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)>(
@@ -56,27 +93,23 @@ int main(int argc, char* argv[])
         SDL_DestroyRenderer);
 
     auto texture = std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)>(
-        SDL_CreateTexture(renderer.get(), SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STATIC, 16, 16),
+        SDL_CreateTexture(renderer.get(), SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STATIC,
+                          chip8::FRAMEBUFFER_WIDTH, chip8::FRAMEBUFFER_HEIGHT),
         SDL_DestroyTexture);
-
-    std::array<std::uint32_t, 16*16> pixels;
-    auto x = 0;
-
-    for (auto& pixel : pixels) {
-        pixel = 0xFF000000 | ((x / 16) << 8) | (x % 16);
-        x += 16;
-    }
-
-    SDL_UpdateTexture(texture.get(), NULL, pixels.data(), 16 * sizeof(uint32_t));
 
     if (!window) {
       fmt::print("Couldn't init SDL window: {}\n", SDL_GetError());
       return 1;
     }
 
+    auto drawRect = computeDrawRect(WINDOW_WIDTH, WINDOW_HEIGHT);
+
     for (int i = 0; i < 100; i++) {
+        context->tick();
+        copyFramebuffer(context.get(), texture.get());
+
         SDL_RenderClear(renderer.get());
-        SDL_RenderCopy(renderer.get(), texture.get(), NULL, NULL);
+        SDL_RenderCopy(renderer.get(), texture.get(), NULL, &drawRect);
         SDL_RenderPresent(renderer.get());
     }
 

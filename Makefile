@@ -7,7 +7,7 @@ SDL2_LIBS = $(shell sdl2-config --libs)
 SDL2_CFLAGS = $(shell sdl2-config --cflags)
 
 CXXFLAGS += -g ${SDL2_CFLAGS} --std=c++17
-LDFLAGS += -lstdc++ $(SDL2_LIBS)
+LDFLAGS += -lstdc++ -lstdc++fs $(SDL2_LIBS)
 
 .PHONY: all clean default
 

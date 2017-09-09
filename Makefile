@@ -18,12 +18,19 @@ SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OUT_DIR)/%.o, $(SRCS))
 HEADERS = $(wildcard $(SRC_DIR)/*.h)
 
+PCH = precompiled.h
+PCH_OUT = $(OUT_DIR)/$(PCH).gch
+PCH_INCLUDE = -include $(OUT_DIR)/$(PCH)
+
 $(OUT_DIR)/stamp:
 	mkdir -p $(OUT_DIR)
 	touch $@
 
-$(OUT_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADERS) $(OUT_DIR)/stamp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+$(PCH_OUT): $(OUT_DIR)/stamp
+	$(CXX) $(CXXFLAGS) -c -o $@ $(SRC_DIR)/$(PCH)
+
+$(OUT_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADERS) $(PCH_OUT) $(OUT_DIR)/stamp
+	$(CXX) $(CXXFLAGS) $(PCH_INCLUDE) -c -o $@ $<
 
 .PRECIOUS: $(TARGET) $(OBJECTS)
 

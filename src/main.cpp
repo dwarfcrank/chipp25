@@ -41,7 +41,7 @@ static void copyFramebuffer(chip8::Chip8Context* context, SDL_Texture* texture)
     std::transform(framebuffer.cbegin(), framebuffer.cend(), pixels.begin(),
                    [](auto pixel) { return pixel ? 0xFFFFFFFF : 0; });
 
-    SDL_UpdateTexture(texture, NULL, pixels.data(), chip8::FRAMEBUFFER_WIDTH * sizeof(std::uint32_t));
+    SDL_UpdateTexture(texture, nullptr, pixels.data(), chip8::FRAMEBUFFER_WIDTH * sizeof(std::uint32_t));
 }
 
 static SDL_Rect computeDrawRect(int width, int height)
@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
         copyFramebuffer(context.get(), texture.get());
 
         SDL_RenderClear(renderer.get());
-        SDL_RenderCopy(renderer.get(), texture.get(), NULL, &drawRect);
+        SDL_RenderCopy(renderer.get(), texture.get(), nullptr, &drawRect);
         SDL_RenderPresent(renderer.get());
     }
 

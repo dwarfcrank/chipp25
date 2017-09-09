@@ -1,14 +1,49 @@
 #include <array>
 #include <cstdint>
+#include <experimental/filesystem>
+#include <fstream>
 #include <memory>
 #include <SDL2/SDL.h>
 
 #include "format.h"
+#include "chip8.h"
+
+namespace fs = std::experimental::filesystem;
+
+static bool loadROM(chip8::Chip8Context* context, const char* path)
+{
+    auto romPath = fs::path(path);
+
+    if (!fs::exists(romPath)) {
+        return false;
+    }
+
+    auto romSize = fs::file_size(path);
+    std::vector<std::uint8_t> buffer(romSize);
+
+    std::ifstream file(romPath, std::ios::binary);
+    file.read(reinterpret_cast<char*>(buffer.data()), romSize);
+
+    context->loadROM(buffer);
+
+    return true;
+}
 
 int main(int argc, char* argv[])
 {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         fmt::print("Couldn't init SDL: {}\n", SDL_GetError());
+        return 1;
+    }
+
+    if (argc < 2) {
+        fmt::print("Usage: {} <path to ROM>\n", argv[0]);
+        return 1;
+    }
+
+    auto context = std::make_unique<chip8::Chip8Context>();
+    if (!loadROM(context.get(), argv[1])) {
+        fmt::print("Couldn't load ROM {}\n", argv[1]);
         return 1;
     }
 

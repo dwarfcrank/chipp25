@@ -2,8 +2,10 @@
 #define CHIP8_H
 
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <optional>
+#include <stack>
 #include <vector>
 
 namespace chip8
@@ -19,6 +21,8 @@ namespace chip8
     const std::size_t FRAMEBUFFER_WIDTH = 64;
     const std::size_t FRAMEBUFFER_HEIGHT = 32;
     const std::size_t FRAMEBUFFER_SIZE = FRAMEBUFFER_WIDTH * FRAMEBUFFER_HEIGHT;
+
+    const std::chrono::milliseconds DELAY_TICK(16);
 
     class Chip8Context
     {
@@ -37,12 +41,14 @@ namespace chip8
             std::array<std::uint16_t, NUM_GPRS> V = {{ 0 }};
             std::uint16_t I = 0;
             std::uint16_t PC = INITIAL_PC;
-            std::uint8_t SP = 0;
+            std::uint16_t DT = 0;
         } m_registers;
 
-        std::array<std::uint16_t, STACK_SIZE> m_stack = {{ 0 }};
+        std::stack<std::uint16_t> m_stack;
         std::array<std::uint8_t, MEMORY_SIZE> m_memory = {{ 0 }};
         std::array<std::uint8_t, FRAMEBUFFER_SIZE> m_framebuffer = {{ 0 }};
+
+        std::chrono::high_resolution_clock::time_point m_lastTick = std::chrono::high_resolution_clock::now();
 
         using InstructionHandler = std::optional<std::uint16_t>(Chip8Context::*)(std::uint16_t);
         static const std::array<InstructionHandler, 16> instructionHandlers;
@@ -51,10 +57,15 @@ namespace chip8
 
         std::optional<std::uint16_t> handle0(std::uint16_t instruction);
         std::optional<std::uint16_t> handleJP(std::uint16_t instruction);
+        std::optional<std::uint16_t> handleCALL(std::uint16_t instruction);
+        std::optional<std::uint16_t> handleSE(std::uint16_t instruction);
+        std::optional<std::uint16_t> handleSNE(std::uint16_t instruction);
         std::optional<std::uint16_t> handleDRW(std::uint16_t instruction);
         std::optional<std::uint16_t> handleLDI(std::uint16_t instruction);
         std::optional<std::uint16_t> handleLD(std::uint16_t instruction);
         std::optional<std::uint16_t> handleADD(std::uint16_t instruction);
+        std::optional<std::uint16_t> handleRND(std::uint16_t instruction);
+        std::optional<std::uint16_t> handleF(std::uint16_t instruction);
 
     };
 }

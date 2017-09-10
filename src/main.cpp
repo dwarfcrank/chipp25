@@ -1,6 +1,8 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cstdlib>
+#include <ctime>
 #include <experimental/filesystem>
 #include <fstream>
 #include <memory>
@@ -102,9 +104,11 @@ int main(int argc, char* argv[])
       return 1;
     }
 
+    std::srand(std::time(0));
+
     auto drawRect = computeDrawRect(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10000; i++) {
         context->tick();
         copyFramebuffer(context.get(), texture.get());
 
@@ -113,7 +117,7 @@ int main(int argc, char* argv[])
         SDL_RenderPresent(renderer.get());
     }
 
-    SDL_Delay(5000);
+    SDL_Delay(1000);
 
     SDL_Quit();
 

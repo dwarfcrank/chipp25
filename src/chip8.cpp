@@ -194,18 +194,25 @@ namespace chip8
 
     std::optional<std::uint16_t> Chip8Context::handleF(std::uint16_t instruction)
     {
+        auto reg = (instruction & 0x0F00) >> 8;
+
         switch (instruction & 0xF0FF) {
         case 0xF015: {
             // LD DT, Vx
-            auto reg = (instruction & 0x0F00) >> 8;
             m_registers.DT = m_registers.V[reg];
+
+            break;
+        }
+
+        case 0xF01E: {
+            // ADD I, Vx
+            m_registers.I += m_registers.V[reg];
 
             break;
         }
 
         case 0xF007: {
             // LD Vx, DT
-            auto reg = (instruction & 0x0F00) >> 8;
             m_registers.V[reg] = m_registers.DT;
 
             break;
@@ -239,7 +246,7 @@ namespace chip8
         case 3: m_registers.V[regA] ^= m_registers.V[regB]; break;
 
         case 4: {
-            auto temp = m_registers.V[regA] + m_registers.V[regB];
+            std::uint16_t temp = m_registers.V[regA] + m_registers.V[regB];
             m_registers.V[0xF] = (temp & 0xFF00) ? 1 : 0;
             m_registers.V[regA] = temp & 0x00FF;
             break;
@@ -264,7 +271,7 @@ namespace chip8
         }
 
         case 0xE: {
-            m_registers.V[0xF] = m_registers.V[regA] & 0x8000;
+            m_registers.V[0xF] = m_registers.V[regA] & 0x80;
             m_registers.V[regA] <<= 1;
             break;
         }

@@ -38,7 +38,7 @@ namespace chip8
     private:
         struct
         {
-            std::array<std::uint16_t, NUM_GPRS> V = {{ 0 }};
+            std::array<std::uint8_t, NUM_GPRS> V = {{ 0 }};
             std::uint16_t I = 0;
             std::uint16_t PC = INITIAL_PC;
             std::uint16_t DT = 0;

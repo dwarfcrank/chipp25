@@ -20,7 +20,7 @@ namespace chip8
         nullptr,
         &Chip8Context::handleLD,
         &Chip8Context::handleADD,
-        nullptr,
+        &Chip8Context::handle8,
         nullptr,
         &Chip8Context::handleLDI,
         nullptr,
@@ -211,11 +211,67 @@ namespace chip8
             break;
         }
 
+        case 0xF018:
+            // LD ST, Vx
+            break;
+
+        case 0xF00A:
+            // LD Vx, ST
+            break;
         default:
             warnUnknownInstruction(instruction);
             break;
         }
 
         return {};
+    }
+
+    std::optional<std::uint16_t> Chip8Context::handle8(std::uint16_t instruction)
+    {
+        auto regA = (instruction & 0x0F00) >> 8;
+        auto regB = (instruction & 0x00F0) >> 4;
+        auto subOp = instruction & 0x000F;
+
+        switch (subOp) {
+        case 0: m_registers.V[regA]  = m_registers.V[regB]; break;
+        case 1: m_registers.V[regA] |= m_registers.V[regB]; break;
+        case 2: m_registers.V[regA] &= m_registers.V[regB]; break;
+        case 3: m_registers.V[regA] ^= m_registers.V[regB]; break;
+
+        case 4: {
+            auto temp = m_registers.V[regA] + m_registers.V[regB];
+            m_registers.V[0xF] = (temp & 0xFF00) ? 1 : 0;
+            m_registers.V[regA] = temp & 0x00FF;
+            break;
+        }
+
+        case 5: {
+            m_registers.V[0xF] = (m_registers.V[regA] > m_registers.V[regB]) ? 1 : 0;
+            m_registers.V[regA] -= m_registers.V[regB];
+            break;
+        }
+
+        case 6: {
+            m_registers.V[0xF] = m_registers.V[regA] & 1;
+            m_registers.V[regA] >>= 1;
+            break;
+        }
+
+        case 7: {
+            m_registers.V[0xF] = (m_registers.V[regB] > m_registers.V[regA]) ? 1 : 0;
+            m_registers.V[regA] = m_registers.V[regB] - m_registers.V[regA];
+            break;
+        }
+
+        case 0xE: {
+            m_registers.V[0xF] = m_registers.V[regA] & 0x8000;
+            m_registers.V[regA] <<= 1;
+            break;
+        }
+
+        default:
+            warnUnknownInstruction(instruction);
+            break;
+        }
     }
 }

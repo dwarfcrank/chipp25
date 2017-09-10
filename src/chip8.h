@@ -66,6 +66,7 @@ namespace chip8
         std::optional<std::uint16_t> handleADD(std::uint16_t instruction);
         std::optional<std::uint16_t> handleRND(std::uint16_t instruction);
         std::optional<std::uint16_t> handleF(std::uint16_t instruction);
+        std::optional<std::uint16_t> handle8(std::uint16_t instruction);
 
     };
 }

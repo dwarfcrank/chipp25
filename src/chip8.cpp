@@ -9,6 +9,22 @@
 #include "chip8.h"
 #include "format.h"
 
+namespace
+{
+    enum SubOp8
+    {
+        LD = 0,
+        OR,
+        AND,
+        XOR,
+        ADD,
+        SUB,
+        SHR,
+        SUBN,
+        SHL = 0xE
+    };
+}
+
 namespace chip8
 {
     const std::array<Chip8Context::InstructionHandler, 16> Chip8Context::instructionHandlers = {{
@@ -197,34 +213,21 @@ namespace chip8
         auto reg = (instruction & 0x0F00) >> 8;
 
         switch (instruction & 0xF0FF) {
-        case 0xF015: {
+        case 0xF015:
             // LD DT, Vx
             m_registers.DT = m_registers.V[reg];
-
             break;
-        }
 
-        case 0xF01E: {
+        case 0xF01E:
             // ADD I, Vx
             m_registers.I += m_registers.V[reg];
-
             break;
-        }
 
-        case 0xF007: {
+        case 0xF007:
             // LD Vx, DT
             m_registers.V[reg] = m_registers.DT;
-
-            break;
-        }
-
-        case 0xF018:
-            // LD ST, Vx
             break;
 
-        case 0xF00A:
-            // LD Vx, ST
-            break;
         default:
             warnUnknownInstruction(instruction);
             break;
@@ -240,41 +243,37 @@ namespace chip8
         auto subOp = instruction & 0x000F;
 
         switch (subOp) {
-        case 0: m_registers.V[regA]  = m_registers.V[regB]; break;
-        case 1: m_registers.V[regA] |= m_registers.V[regB]; break;
-        case 2: m_registers.V[regA] &= m_registers.V[regB]; break;
-        case 3: m_registers.V[regA] ^= m_registers.V[regB]; break;
+        case SubOp8::LD:  m_registers.V[regA]  = m_registers.V[regB]; break;
+        case SubOp8::OR:  m_registers.V[regA] |= m_registers.V[regB]; break;
+        case SubOp8::AND: m_registers.V[regA] &= m_registers.V[regB]; break;
+        case SubOp8::XOR: m_registers.V[regA] ^= m_registers.V[regB]; break;
 
-        case 4: {
+        case SubOp8::ADD: {
             std::uint16_t temp = m_registers.V[regA] + m_registers.V[regB];
             m_registers.V[0xF] = (temp & 0xFF00) ? 1 : 0;
             m_registers.V[regA] = temp & 0x00FF;
             break;
         }
 
-        case 5: {
+        case SubOp8::SUB:
             m_registers.V[0xF] = (m_registers.V[regA] > m_registers.V[regB]) ? 1 : 0;
             m_registers.V[regA] -= m_registers.V[regB];
             break;
-        }
 
-        case 6: {
+        case SubOp8::SHR:
             m_registers.V[0xF] = m_registers.V[regA] & 1;
             m_registers.V[regA] >>= 1;
             break;
-        }
 
-        case 7: {
+        case SubOp8::SUBN:
             m_registers.V[0xF] = (m_registers.V[regB] > m_registers.V[regA]) ? 1 : 0;
             m_registers.V[regA] = m_registers.V[regB] - m_registers.V[regA];
             break;
-        }
 
-        case 0xE: {
+        case SubOp8::SHL:
             m_registers.V[0xF] = m_registers.V[regA] & 0x80;
             m_registers.V[regA] <<= 1;
             break;
-        }
 
         default:
             warnUnknownInstruction(instruction);

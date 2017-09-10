@@ -58,7 +58,7 @@ namespace chip8
         auto mem = m_memory.begin() + m_registers.PC;
         std::uint16_t instruction = (*mem << 8) | *(mem + 1);
 
-        auto op = (instruction >> 12) & 0xF;
+        auto op = (instruction & 0xF000) >> 12;
         auto handler = instructionHandlers.at(op);
 
         std::optional<std::uint16_t> newPc;
